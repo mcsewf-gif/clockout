@@ -113,19 +113,21 @@
             border: 1px solid #bfdbfe;
         }
 
+        /* 调整为 2 列网格，兼顾字号与手机屏幕宽度 */
         .time-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(2, 1fr);
             gap: 8px;
         }
 
+        /* 减小按钮尺寸与字号 */
         .time-btn {
-            padding: 12px 6px;
+            padding: 10px 4px;
             border: 1px solid var(--border);
-            border-radius: 10px;
+            border-radius: 8px;
             background: var(--bg);
             color: var(--text-main);
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -428,3 +430,4 @@
     </script>
 </body>
 </html>
+
