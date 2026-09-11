@@ -1,0 +1,15 @@
+{
+  "short_name": "下班打卡",
+  "name": "每日下班打卡记录器",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135715.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#f8fafc",
+  "theme_color": "#2563eb",
+  "display": "standalone"
+}
