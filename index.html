@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下班打卡记录器 (Work Off Tracker PWA)</title>
+    <!-- PWA Web App Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="下班打卡">
+    <!-- SheetJS for Excel Export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-sub: #64748b;
+            --border: #e2e8f0;
+            --accent: #eff6ff;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            padding: 16px;
+            max-width: 500px;
+            margin: 0 auto;
+            min-height: 100vh;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-top: 10px;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        header p {
+            font-size: 0.85rem;
+            color: var(--text-sub);
+            margin-top: 4px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+        }
+
+        .date-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="date"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 1rem;
+            outline: none;
+            background: var(--bg);
+            color: var(--text-main);
+        }
+
+        .weekday-badge {
+            background: var(--accent);
+            color: var(--primary);
+            font-weight: bold;
+            padding: 12px 16px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            min-width: 80px;
+            text-align: center;
+            border: 1px solid #bfdbfe;
+        }
+
+        .time-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+
+        .time-btn {
+            padding: 12px 6px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--bg);
+            color: var(--text-main);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .time-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn-submit:active {
+            background: var(--primary-hover);
+        }
+
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .action-bar h2 {
+            font-size: 1.1rem;
+        }
+
+        .btn-export {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .record-list {
+            list-style: none;
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .record-item:last-child {
+            border-bottom: none;
+        }
+
+        .record-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .record-date {
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .record-time {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .btn-delete {
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px 8px;
+        }
+
+        .btn-delete:hover {
+            color: var(--danger);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: var(--text-sub);
+            padding: 30px 0;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>⏱️ 下班打卡记录</h1>
+        <p>轻松记录每日下班时间 · 支持导出 Excel</p>
+    </header>
+
+    <div class="card">
+        <div class="form-group">
+            <label for="datePicker">选择日期</label>
+            <div class="date-container">
+                <input type="date" id="datePicker">
+                <div class="weekday-badge" id="weekdayDisplay">星期一</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>选择下班时间</label>
+            <div class="time-grid" id="timeGrid">
+                <!-- 预设时间选项 -->
+                <button class="time-btn" data-time="5:00pm">5:00pm</button>
+                <button class="time-btn" data-time="5:30pm">5:30pm</button>
+                <button class="time-btn" data-time="5:45pm">5:45pm</button>
+                <button class="time-btn" data-time="6:00pm">6:00pm</button>
+                <button class="time-btn" data-time="6:15pm">6:15pm</button>
+                <button class="time-btn" data-time="6:30pm">6:30pm</button>
+                <button class="time-btn" data-time="6:45pm">6:45pm</button>
+                <button class="time-btn" data-time="7:00pm">7:00pm</button>
+            </div>
+        </div>
+
+        <button class="btn-submit" id="saveBtn">保存记录</button>
+    </div>
+
+    <div class="card">
+        <div class="action-bar">
+            <h2>历史记录</h2>
+            <button class="btn-export" id="exportBtn">📊 导出 Excel</button>
+        </div>
+        <ul class="record-list" id="recordList">
+            <!-- 动态生成记录列表 -->
+        </ul>
+    </div>
+
+    <script>
+        // 初始化数据与DOM元素
+        const datePicker = document.getElementById('datePicker');
+        const weekdayDisplay = document.getElementById('weekdayDisplay');
+        const timeGrid = document.getElementById('timeGrid');
+        const saveBtn = document.getElementById('saveBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const recordList = document.getElementById('recordList');
+
+        const weekdaysStr = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+        let selectedTime = '5:00pm'; // 默认选中
+        let records = JSON.parse(localStorage.getItem('offWorkRecords') || '[]');
+
+        // 初始化日期为今天
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        datePicker.value = `${yyyy}-${mm}-${dd}`;
+        updateWeekday();
+
+        // 绑定默认时间高亮
+        const timeBtns = timeGrid.querySelectorAll('.time-btn');
+        timeBtns[0].classList.add('active');
+
+        // 日期变更监听
+        datePicker.addEventListener('change', updateWeekday);
+
+        function updateWeekday() {
+            if (!datePicker.value) return;
+            // 解决时区偏差问题
+            const parts = datePicker.value.split('-');
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            const dayOfWeek = dateObj.getDay();
+            weekdayDisplay.innerText = weekdaysStr[dayOfWeek];
+        }
+
+        // 时间选择监听
+        timeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                timeBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedTime = btn.dataset.time;
+            });
+        });
+
+        // 保存记录
+        saveBtn.addEventListener('click', () => {
+            const dateVal = datePicker.value;
+            if (!dateVal) {
+                alert('请选择日期！');
+                return;
+            }
+
+            const parts = dateVal.split('-');
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            const weekday = weekdaysStr[dateObj.getDay()];
+
+            // 检查同日期记录并覆盖/更新
+            const existingIndex = records.findIndex(r => r.date === dateVal);
+            if (existingIndex > -1) {
+                records[existingIndex] = { date: dateVal, weekday: weekday, time: selectedTime };
+            } else {
+                records.unshift({ date: dateVal, weekday: weekday, time: selectedTime });
+            }
+
+            // 日期倒序排序
+            records.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            localStorage.setItem('offWorkRecords', JSON.stringify(records));
+            renderRecords();
+            alert('保存成功！');
+        });
+
+        // 渲染记录列表
+        function renderRecords() {
+            recordList.innerHTML = '';
+            if (records.length === 0) {
+                recordList.innerHTML = '<div class="empty-state">暂无下班记录，快去打卡吧～</div>';
+                return;
+            }
+
+            records.forEach((rec, index) => {
+                const li = document.createElement('li');
+                li.className = 'record-item';
+                li.innerHTML = `
+                    <div class="record-info">
+                        <span class="record-date">${rec.date} (${rec.weekday})</span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <span class="record-time">${rec.time}</span>
+                        <button class="btn-delete" onclick="deleteRecord(${index})">✕</button>
+                    </div>
+                `;
+                recordList.appendChild(li);
+            });
+        }
+
+        // 删除记录
+        window.deleteRecord = function(index) {
+            if (confirm('确定删除这条记录吗？')) {
+                records.splice(index, 1);
+                localStorage.setItem('offWorkRecords', JSON.stringify(records));
+                renderRecords();
+            }
+        };
+
+        // 导出 Excel 功能
+        exportBtn.addEventListener('click', () => {
+            if (records.length === 0) {
+                alert('暂无记录可导出！');
+                return;
+            }
+
+            // 格式化 Excel 导出数据
+            const excelData = records.map(r => ({
+                '日期': r.date,
+                '星期': r.weekday,
+                '下班时间': r.time
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(excelData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "下班打卡记录");
+
+            // 设置列宽
+            worksheet['!cols'] = [
+                { wch: 15 }, // 日期
+                { wch: 12 }, // 星期
+                { wch: 15 }  // 下班时间
+            ];
+
+            // 导出文件
+            XLSX.writeFile(workbook, `下班时间记录_${new Date().toISOString().slice(0,10)}.xlsx`);
+        });
+
+        // 初始渲染
+        renderRecords();
+
+        // 注册 Service Worker 启用 PWA 离线支持
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('Service Worker 注册成功'))
+                .catch(err => console.log('Service Worker 注册失败:', err));
+        }
+    </script>
+</body>
+</html>
