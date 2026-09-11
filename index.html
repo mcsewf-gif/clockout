@@ -113,14 +113,13 @@
             border: 1px solid #bfdbfe;
         }
 
-        /* 调整为 2 列网格，兼顾字号与手机屏幕宽度 */
+        /* 预设时间网格 */
         .time-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 8px;
         }
 
-        /* 减小按钮尺寸与字号 */
         .time-btn {
             padding: 10px 4px;
             border: 1px solid var(--border);
@@ -194,6 +193,7 @@
             align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid var(--border);
+            gap: 8px;
         }
 
         .record-item:last-child {
@@ -202,28 +202,34 @@
 
         .record-info {
             display: flex;
-            flex-direction: column;
-            gap: 2px;
+            align-items: center;
+            flex: 1;
+            min-width: 0;
         }
 
+        /* 调整日期与星期显示：强制不换行、调小字号 */
         .record-date {
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .record-time {
-            font-size: 1.1rem;
+            font-size: 0.95rem;
             font-weight: bold;
             color: var(--primary);
+            white-space: nowrap;
         }
 
         .btn-delete {
             background: none;
             border: none;
             color: #94a3b8;
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 2px 6px;
         }
 
         .btn-delete:hover {
@@ -371,7 +377,7 @@
                     <div class="record-info">
                         <span class="record-date">${rec.date} (${rec.weekday})</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="record-time">${rec.time}</span>
                         <button class="btn-delete" onclick="deleteRecord(${index})">✕</button>
                     </div>
@@ -430,4 +436,5 @@
     </script>
 </body>
 </html>
+
 
