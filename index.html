@@ -193,7 +193,7 @@
             align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid var(--border);
-            gap: 4px;
+            gap: 2px;
         }
 
         .record-item:last-child {
@@ -207,15 +207,23 @@
             min-width: 0;
         }
 
-        /* 进一步微调字号，保证完全不省略不换行 */
+        /* 控制日期与全称星期显示：紧凑字体与不换行 */
         .record-date {
             font-weight: 600;
-            font-size: 0.78rem;
+            font-size: 0.75rem;
             white-space: nowrap;
+            letter-spacing: -0.2px;
+        }
+
+        .record-right {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
         }
 
         .record-time {
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             font-weight: bold;
             color: var(--primary);
             white-space: nowrap;
@@ -225,7 +233,7 @@
             background: none;
             border: none;
             color: #94a3b8;
-            font-size: 1.1rem;
+            font-size: 1.0rem;
             cursor: pointer;
             padding: 2px 4px;
         }
@@ -296,8 +304,6 @@
         const recordList = document.getElementById('recordList');
 
         const weekdaysStr = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-        // 简写周几，减少文本宽度
-        const shortWeekdaysStr = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
         
         let selectedTime = '5:00pm'; // 默认选中
         let records = JSON.parse(localStorage.getItem('offWorkRecords') || '[]');
@@ -347,14 +353,13 @@
             const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
             const dayOfWeek = dateObj.getDay();
             const weekday = weekdaysStr[dayOfWeek];
-            const shortWeekday = shortWeekdaysStr[dayOfWeek];
 
             // 检查同日期记录并覆盖/更新
             const existingIndex = records.findIndex(r => r.date === dateVal);
             if (existingIndex > -1) {
-                records[existingIndex] = { date: dateVal, weekday: weekday, shortWeekday: shortWeekday, time: selectedTime };
+                records[existingIndex] = { date: dateVal, weekday: weekday, time: selectedTime };
             } else {
-                records.unshift({ date: dateVal, weekday: weekday, shortWeekday: shortWeekday, time: selectedTime });
+                records.unshift({ date: dateVal, weekday: weekday, time: selectedTime });
             }
 
             // 日期倒序排序
@@ -374,21 +379,21 @@
             }
 
             records.forEach((rec, index) => {
-                // 兼容历史数据（如果没有 shortWeekday 就现场计算）
-                let shortWk = rec.shortWeekday;
-                if (!shortWk && rec.date) {
+                // 确保完整显示“星期几”
+                let fullWk = rec.weekday;
+                if (!fullWk && rec.date) {
                     const parts = rec.date.split('-');
                     const d = new Date(parts[0], parts[1] - 1, parts[2]);
-                    shortWk = shortWeekdaysStr[d.getDay()];
+                    fullWk = weekdaysStr[d.getDay()];
                 }
 
                 const li = document.createElement('li');
                 li.className = 'record-item';
                 li.innerHTML = `
                     <div class="record-info">
-                        <span class="record-date">${rec.date} (${shortWk})</span>
+                        <span class="record-date">${rec.date} (${fullWk})</span>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
+                    <div class="record-right">
                         <span class="record-time">${rec.time}</span>
                         <button class="btn-delete" onclick="deleteRecord(${index})">✕</button>
                     </div>
@@ -416,7 +421,7 @@
             // 格式化 Excel 导出数据
             const excelData = records.map(r => ({
                 '日期': r.date,
-                '星期': r.weekday || r.shortWeekday,
+                '星期': r.weekday,
                 '下班时间': r.time
             }));
 
